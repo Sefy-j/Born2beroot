@@ -1,0 +1,100 @@
+INSTALACION DE SERVICIOS BONUS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PARTE 1: WORDPRESS CON LIGHTTPD, MariaDB y PHP
+
+	- Lighttpd: Es un webserver sencillo y rapido. Lo vamos a usar como base para alojar el WORDPRESS.
+		sudo apt install lighttpd
+		sudo ufw allow 80 		#Utiliza el puerto 80 por defecto. También vale "sudo ufw allow https"
+		systemctl start lighttpd 	#Inicializamos el programa
+		systemctl enable lighttpd 	#Hacemos que se inicialice siempre al bootear
+		systemctl status lighttpd 	#Check
+
+	- MariaDB: Sistema de gestión de bases de datos. El webserver va a acceder a esta base de datos para mostrar 
+	las distintas páginas web que pudiesemos crear. Esta basado en SQL.
+		sudo apt install mariadb-server
+		systemctl start mariadb-server  #Inicializamos el programa
+		systemctl enable mariadb-server #Hacemos que se inicialice siempre al bootear
+		systemctl status mariadb-server #Check
+
+		sudo mysql_secure_installation #Configuramos la instalacion, eliminando ciertas opciones inseguras
+			Switch to unix_socket authentication [Y/n]: Y			#Permite conectar con el unix socket, que maneja
+											con seguridad las conexiones entre procesos.
+			Enter current password for root (enter for none): Enter
+			Set root password? [Y/n]: Y
+			New password: Password
+			Re-enter new password: Password
+			Remove anonymous users? [Y/n]: Y 			#Elimina el acceso de usuarios anonimos
+			Disallow root login remotely? [Y/n]: Y				
+			Remove test database and access to it? [Y/n]:  Y	#Elimina la base de datos de prueba
+			Reload privilege tables now? [Y/n]:  Y			#Guarda los datos
+		
+		systemctl restart mariadb	#Restart para aplicar cambios
+		sudo mariadb 				#Entro en la consola del mariaDB para configurarlo
+			CREATE DATABASE nombre; #Importante terminar en ;
+			CREATE USER 'nombreusuario'@'nombrehost(termina42)' IDENTIFIED BY 'contraseña';
+			GRANT ALL ON nombrebasededatos.* TO 'nombreusuario'@'nombrehost(termina42)' 
+					IDENTIFIED BY 'contraseña' WITH GRANT OPTION; 		#El .* da acceso a todas las
+												#tablas de la base de datos.
+			FLUSH PRIVILEGES; 		#Aplico los cambios
+			EXIT
+		sudo mariadb -u nombreusuario -p 	#Check para ver si esta bien creado
+			SHOW DATABASES;			#Check	
+
+	- PHP: Es un lenguaje de scripts para servidores. Las funciones de Wordpress lo usan.
+		sudo apt install php-cgi php-mysql 	#Instalo los dos modulos básicos necesarios
+
+	- Wordpress: Instalo el propio wordpress. Es un Content Manager System (CMS). Permite crear blogs y webs.
+		sudo apt install wget
+		sudo wget hhttp://wordpress.org/latest.tar.gz -P /var/www/html #Descargo la ultima version de Wordpress
+		sudo tar -xzvf /var/www/html/latest.tar.gz 	#Extraigo el .tar, lo extraigo, copio el contenido en 
+		sudo rm /var/www/html/latest.tar.gz		#/var/www/html y borro el tar y el original extraido
+		sudo cp -r wordpress/* /var/www/html
+		sudo rm -rf wordpress
+		sudo cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php	#Uso la config de prueba
+		sudo vi /var/www/html/wp-config.php		#Cambio la configuración para linkearla con la database de MariaDB
+			define( 'DB_NAME', 'database_name_here' );
+			define( 'DB_USER', 'username_here' );
+			define( 'DB_PASSWORD', 'password_here' );
+
+	-Configuracion Lighttpd
+		sudo lighty-enable-mod fastcgi		#Activo los modulos fastcgi. Es un protocolo para conexiones de 
+		sudo lighty-enable-mod fastcgi-php  	#aplicaciones a servidores web
+		sudo service lighttpd force-reload
+
+	Ahora podemos conectarnos al servidor a través del navegador utilizando nuestra ip.
+		http://10.11.200.231
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+PARTE 2: INSTALAR UN SERVICIO EXTRA A TU ELECCIÓN: FAIL2BAN
+
+	- Fail2ban: Se trata de un servicio de protección extra. Entre otras cosas, permite bloquear las ips de aquellos 
+	usuarios que hayan intentado conectarse de forma fallida mediante ssh tras un numero determinado de intentos.
+		sudo apt install fail2ban
+		systemctl start fail2ban
+		cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local		#Creamos una version local de la configuración
+			#Cambiamos la configuración en JAILS, despues de mode=normal añadiendo:
+				enabled = true
+				maxretry = 3
+				findtime = 10m
+				bantime = 10m
+				port = 4242
+			#Cambiamos tambien los puertos de dropbear y selinux-ssh a 4242, ya que es la que usa nuestro ssh.
+			#Hay que cambiar los puertos también en el jail.conf
+		systemctl restart fail2ban
+		systemctl status fail2ban
+
+		fail2ban-client status				#Checkeo de los status y las ip baneadas
+		fail2ban-client status sshd
+		tail -f /var/log/fail2ban.log
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+REFERENCIAS:
+
+	https://github.com/caroldaniel/42sp-cursus-born2beroot
+	https://github.com/hanshazairi/42-born2beroot

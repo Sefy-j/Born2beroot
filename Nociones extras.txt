@@ -1,0 +1,55 @@
+DEBIAN VS CENTOS
+
+	Debian es más sencillo de utilizar, fácilmente actualizable y con multitud de paquetes para personalizar
+	CentOS tiene mas soporte y un mercado más grande, porque una vez instalado es más fácil de usar, personalizar
+	las actualizaciones y las configuraciones son muy complejas, y los paquetes más limitados.
+
+LOGICAL VOLUME MANAGER: LVM
+
+	Es un sistema de manejo de la memoria del disco duro usado en Linux. Los "volumenes físico", es decir,
+	el hardware, se dividen en particiones primarias y en particiones lógicas. Las particiones primarias 
+	son fijas, y es donde se almacena la parte de arranque del sistema operativo, mientras que
+	las particiones lógicas, los "volúmenes lógicos", se pueden subdividir en distintas particiones que 
+	pueden formar parte de distintos volúmenes físicos, y que pueden incluso ser realocados. Están agrupados
+	en "grupos de volúmenes", que es una colección con nombre de volúmenes lógicos. Solo puede haber una
+	partición lógica por ordenador, y necesita de una pequeña partición física que hace las veces de puntero.
+
+GESTIÓN DE PAQUETES: APT-GET, APT Y APTITUDE
+
+	La herramienta base de gestión de paquetes de linux es el DPKG. Sin embargo, es una herramienta de
+	bajo nivel, y requiere de instalación de las dependencias de forma manual. Por ello, se utiliza,
+	originalmente apt-get, y más actualmente apt como herramienta de instalación de paquetes.
+	Por su parte, Aptitude es una aplicación alternativa a Apt con interfaz gráfica, que permite una
+	gestión más intuitiva de las configuraciones posibles en las instalaciones.
+
+APPARMOR vs SELinux
+
+	AppArmor es el programa por defecto de Debian de control del MAC (Mandatory Acces Control), un protocolo 
+	de seguridad que evita que los programas puedan afectar a elementos que previamente no tenían derecho
+	de hacerlo, aislándolas unas de otras. SELinux en cambio es mucho más complejo, pero también permite
+	mayor control y opciones de configuración.
+
+CAMBIO DE HOSTNAME
+
+	hostnamectl status
+	hostnamectl set-hostname <new-hostname> #Debería cambiar el hostname. PUEDE NO FUNCIONAR!
+	hostname (new -hostname)
+	sudo nano /ect/hostname #Cambiamos aqui el hostname
+	sudo nano /etc/hosts	#Cambiamos aqui el hostname
+
+COMANDOS ÚTILES
+
+	1) lsblk                              #Comprueba particiones
+	2) sudo aa-status                     #AppArmor
+	3) getent group sudo                  #Usuarios del grupo sudo
+	4) getent group user42                #Usuarios del grupo user42
+	5) sudo service ssh status            #SSH
+	6) sudo ufw status                    #UFW
+	7) ssh username@ipadress -p 4242      #Conectar a la VM desde la terminal
+	8) nano /etc/sudoers.d/<filename>     #Configuración del sudo
+	9) nano /etc/login.defs               #Política de expiracion de contraseñas
+	10) nano /etc/pam.d/common-password   #Política de contraseñas
+	11) sudo crontab -l       			  #Tareas programadas con cron
+	12)sudo /var/log/sudo				  #Logs del sudo
+	13)	*/1 * * * * /path/to/monitoring.sh          	#Ejecuta la script cada 30s
+| 		*/1 * * * * sleep 30s && /path/to/monitoring.sh

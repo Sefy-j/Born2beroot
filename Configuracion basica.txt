@@ -1,0 +1,108 @@
+CONFIGURACION BÁSICA DEL SISTEMA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PARTE 1: LOGIN
+
+	- Usar password de encriptación
+	- Login: Preferible root para el setup
+	- lsblk #Comprobamos que las particiones son correctas
+	- aa-status #Comprobamos el estado de AppArmor. Debería estar instalada y funcional por defecto
+
+PARTE 2: INSTALAR SUDO: Permite ejecutar comandos como si fuese otro usuario, en general como el root.
+
+	- apt install sudo #Debemos estar en root. Si no: "su -" --> "root password" 
+	- dpkg -l | grep sudo		#Comprobamos que este instalado correctamente
+	- adduser usuario sudo 		#Añadimos el usuario al grupo sudo
+		getent group sudo 	#Comprobacion
+	- sudo reboot y sudo -v #Reboot para cambios y comprobamos los sudopowers
+	- Configuramos sudo:  	#Podemos hacerlo modificando /etc/sudoers o añadiendo un archivos
+				# (sudoconfig por ejemplo) a /etc/sudoers.d. El archivo sin ~ ni .
+				#Podemos usar visudo como editor de texto, comprueba la sintaxis.
+		sudo nano /etc/sudoers.d/sudoconfig #Añadimos a este nuevo archivo las lineas de configuracion
+			Defaults        passwd_tries=3 			#Maximo numero de intentos para acceder a sudo
+			Defaults        badpass_message="Mensaje de error que queramos"
+			Defaults        log_input,log_output 		#Guardamos los logs de inputs y outputs
+			Defaults        iolog_dir="/var/log/sudo" 	#Lugar de guardado de los logs
+			Defaults        logfile="/var/log/sudo/sudo.log"
+				#Debemos crear primero la carpeta con "sudo mkdir /var/log/sudo"
+			Defaults		requiretty	#Obligamos a que solo se pueda usar desde terminal. Es decir, ningún 
+								#programa podar usar sudo si no es desde consola.
+			Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+					#Por seguridad, cambiamos el path a dónde puede acceder sudo.
+		Comentamos la linea del secure_path de /etc/sudoers (probablemente irrelevante)
+
+------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+
+PARTE 3: INSTALAR UFW: Uncomplicated Firewall. Es un firewall fácil de configurar. Monitoriza los puertos
+
+	- apt install ufw
+	- ufw enable
+	- systemctl enable ufw 		#Activamos que se lance el ufw en cada inicio
+	- ufw status 			#Muestra los puertos Activamos
+	- ufw allow 4242 		#Permite el puerto 4242, que según el subject es el único debido
+	- ufw delete numeroderegla	#Elimina la regla numerada
+
+------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+
+PARTE 4: INSTALAR SSH: Secure Socket Shell. Protocolo de red que permite un acceso seguro a un sistema,
+con autenticación y encriptación de datos
+
+	- apt install openssh-server
+	- systemctl enable sshd
+	- nano /etc/ssh/sshd_config 
+		Port 22 --> Port 4242 #Cambiamos el puerto por defecto que usa el SSH por el 4242
+		PermiteRootLogin prohibit-password --> PermitRootLogin no #Elimina la opción de conectarse como root
+	- Desde consola externa, comprobamos la conexión remota:
+		ssh user@serverIP -p 4242 #Conectamos con el usuario a la dirección ip y en el puerto 4242
+		(ifconfg -a para comprobar la dirección ip)
+	
+------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+
+PARTE 5: INSTALAR POLITICA DE CONTRASEÑAS
+
+	- sudo nano /etc/login.defs				#Cambiamos aquí la política básica de contraseñas.  
+		PASS_MAX_DAYS    99999 -> PASS_MAX_DAYS    30	#PASS_WARN_AGE ya está por defecto en 7
+ 		PASS_MIN_DAYS    0     -> PASS_MIN_DAYS    2 
+	- En los usuarios ya creados, estos cambios no son retroactivos:
+		chage -M 30 <username/root>	#Max days
+		chage -m 2 <username/root>	#Min days
+		chage -W 7 <username/root>  	#Warning days
+		chage -l <username/root>	#Permite comprobar la información
+	- apt install libpam-pwquality  #Paquete para control mas extenso de las contraseñas
+	- sudo nano /etc/pam.d/common-password   #Cambiamos la configuracion por defecto
+		Añadimos al final de la linea "password requisite pam_pwqiality.so retry=3"
+			minlen=10 ucredit=-1 dcredit=-1 maxrepeat=3 reject_username difok=7 enforce_for_root
+			#Minima longitud, ucredit y dcredit que contenga mínimo una letra mayúscula y un dígito,
+			#máximo tres caracteres consecutivos iguales, que no contenga el nombre de usuario, y que se
+			#diferencie en 7 caracteres de la contraseña anterior. Además, forzamos los cambios al root.
+	- passwd #Cambiamos la contraseña del usuario de acuerdo a estas normas
+	- sudo passwd #Cambiamos la de root
+	- sudo addgroup user42 #Creamos un nuevo grupo tal y como nos piden
+	- sudo adduser usuario user42 #Añadimos el usuario al grupo
+	- Control de usuarios:
+		getent passwd | cut -d ":" -f 1 #Muestra todos los usuarios
+		adduser nombreusuarionuevo 	#Añadiría un usuario nuevo	
+		users 				#Muestra los usuarios logueados
+		usermod 			#Modifica usuarios. -l nombre de usuario, -c comentario o nombre.
+		userdel -r 			#Elimina le usuario y los archivos propios
+		less /etc/group | cut -d ":" -f 1 - show list of all users on computer;
+
+		groups nombreusuario 			#Muestra los grupos del usuario
+		groupadd nombregrupo 			#Añade grupo nuevo 
+		groupdel nombregrupo 			#Elimina el grupo
+		gpasswd -a nombreusuario nombregrupo	#Añade el usuario al grupo. -d lo elimina
+		gpasswd -d <username> <groupname> - removes user from group;
+
+------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+
+PARTE 6: CONFIGURAR UNA TAREA CRONOMETRADA: Usaremos cron
+
+	- sudo crontab -u root -e #Configuraremos el cron del root
+		Debajo de la linea m h  dom mon dow   command añadiremos:
+		*/10 * * * * sh /path/to/script #Path al script monitoring.sh que hemos creado
+	- sudo crontab -l #Enseña la configuración del cron

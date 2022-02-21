@@ -1,0 +1,51 @@
+INSTALACION DEBIAN EN VIRTUAL BOX
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PARTE 1: CREACIÓN DE MAQUINA VIRTUAL
+
+	- Crear carpeta en sgoinfree/nuestrousuario
+	- Descargar iso Debian de la página web propia
+	- Virtual Box --> Nueva --> Memoria(Default) --> Disco Duro VDI (30.8Gb) #Guardo en sgoinfree
+	- Configuración-->Red-->Adaptador puente #Para conexiones posteriores del bonus
+	- Configuración-->Pantalla-->VBoxVGA #Evita un bug al iniciar la máquina
+	- Seleccionamos la .iso como disco de arranque
+	- Inicializamos
+
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+
+PARTE 2: INSTALACION DEBIAN Y PARTICIONES
+
+	- Install
+	- Idioma, localización, y idioma de teclado (locale configuration)
+	- Hostname: "login42", usuario: "login", y contraseña y contraseña del root
+	- Zona horaria
+	- Particiones: Manual
+		Elegimos el disco duro como lugar donde hacer las particiones, con el tamaño completo
+		Partición primaria (physical):
+			Tamaño según subject, y al principio del espacio disponible montándolo en /boot 
+				#Va a ser el sda1, la partición física donde vamos a instalar el arranque del sistema
+		Partición lógica (Logical Volume):
+			Seleccionamos el resto de la partición y la seleccionamos como volumen físico para encriptación
+				#Nos piden que el volumen lógico este encriptado
+			Configurar volúmenes encriptados-->Crear-->Seleccionamos el volumen a encriptar
+			Elegimos contraseña de encriptación
+			Particiones del LVM:
+				- Creamos Logical Group en la particion logica. Nombre: LVMGroup 
+				- Creamos los Logical Volumes uno a uno, del tamaño correspondiente 
+					#(var-log solo necesita un guion en el nombre)
+				- Montamos los volúmenes de acuerdo al subject, con sistema archivos Ext4
+					#Aqui seleccionamos para que va a ser cada uno (/root, /home, etc). El var log
+					#debemos montarlo escribiéndolo manualmente (/var/log)
+					#Además, el swap usa tipo de archivos especial, swap area
+	- Seleccionamos el mirror desde donde descargara los paquetes el apt
+	- Deseleccionamos los paquetes extra ESPECIALMENTE LA INTERFAZ GRAFICA
+
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+
+REFERENCIAS:
+	https://github.com/caroldaniel/42sp-cursus-born2beroot
+	https://github.com/hanshazairi/42-born2beroot
+	https://www.youtube.com/watch?v=2w-2MX5QrQw
